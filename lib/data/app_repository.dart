@@ -22,7 +22,7 @@ class AppRepository {
     final directory = await getApplicationDocumentsDirectory();
     return openDatabase(
       path.join(directory.path, 'exposure_companion.db'),
-      version: 1,
+      version: 2,
       onConfigure: (database) => database.execute('PRAGMA foreign_keys = ON'),
       onCreate: (database, version) async {
         await database.execute('''
@@ -102,22 +102,28 @@ class AppRepository {
         await database.execute(
           'CREATE INDEX urges_recorded_at ON compulsion_urges(recorded_at)',
         );
-        await database.execute('''
-          CREATE TABLE compulsion_delays (
-            id TEXT PRIMARY KEY,
-            started_at TEXT NOT NULL,
-            duration_minutes INTEGER NOT NULL,
-            initial_urge INTEGER NOT NULL CHECK(initial_urge BETWEEN 0 AND 10),
-            session_id TEXT,
-            ended_at TEXT,
-            result TEXT,
-            FOREIGN KEY(session_id) REFERENCES exposure_sessions(id)
-              ON DELETE SET NULL
-          )
-        ''');
+        await _createCompulsionDelays(database);
+      },
+      onUpgrade: (database, oldVersion, newVersion) async {
+        if (oldVersion < 2) await _createCompulsionDelays(database);
       },
     );
   }
+
+  Future<void> _createCompulsionDelays(DatabaseExecutor database) =>
+      database.execute('''
+        CREATE TABLE compulsion_delays (
+          id TEXT PRIMARY KEY,
+          started_at TEXT NOT NULL,
+          duration_minutes INTEGER NOT NULL,
+          initial_urge INTEGER NOT NULL CHECK(initial_urge BETWEEN 0 AND 10),
+          session_id TEXT,
+          ended_at TEXT,
+          result TEXT,
+          FOREIGN KEY(session_id) REFERENCES exposure_sessions(id)
+            ON DELETE SET NULL
+        )
+      ''');
 
   Future<List<DailyCheckIn>> getCheckIns() async {
     final rows = await (await _db).query(
@@ -416,6 +422,14 @@ class AppRepository {
     return rows.isEmpty ? null : CompulsionDelay.fromMap(rows.first);
   }
 
+  Future<List<CompulsionDelay>> getDelays() async {
+    final rows = await (await _db).query(
+      'compulsion_delays',
+      orderBy: 'started_at DESC',
+    );
+    return rows.map(CompulsionDelay.fromMap).toList();
+  }
+
   Future<CompulsionDelay> startDelay({
     required int minutes,
     required int urge,
@@ -472,8 +486,14 @@ class AppRepository {
 
   Future<String> exportCsv() async {
     final checkIns = await getCheckIns();
+    final exposureItems = await getExposureItems();
     final sessions = await getSessions();
     final urges = await getUrges();
+    final delays = await getDelays();
+    final measurements = await (await _db).query(
+      'exposure_measurements',
+      orderBy: 'recorded_at',
+    );
     final rows = <List<Object?>>[
       ['Record type', 'Recorded at', 'Title', 'Anxiety', 'Compulsion urge', 'Result', 'Reflection'],
       ...checkIns.map((entry) => [
@@ -485,14 +505,32 @@ class AppRepository {
             entry.trigger ?? '',
             entry.note ?? '',
           ]),
+      ...exposureItems.map((entry) => [
+            'Exposure hierarchy item',
+            '',
+            entry.title,
+            entry.expectedAnxiety,
+            '',
+            '${entry.status} · Difficulty ${entry.difficulty}/10',
+            'Trigger: ${entry.trigger}; Description: ${entry.description}; Feared outcome: ${entry.fearedOutcome}; Response prevention plan: ${entry.responsePreventionPlan}',
+          ]),
       ...sessions.map((entry) => [
             'Exposure session',
             entry.startedAt.toIso8601String(),
             entry.title,
             entry.startingAnxiety,
             entry.startingUrge,
-            entry.responseResult ?? 'In progress',
+            '${entry.responseResult ?? 'In progress'} · ${entry.duration.inMinutes} minutes',
             entry.reflection ?? '',
+          ]),
+      ...measurements.map((entry) => [
+            'Exposure measurement',
+            entry['recorded_at'],
+            entry['session_id'],
+            entry['anxiety'],
+            entry['compulsion_urge'],
+            '',
+            entry['note'] ?? '',
           ]),
       ...urges.map((entry) => [
             'Compulsion urge',
@@ -502,6 +540,15 @@ class AppRepository {
             entry.level,
             '',
             '',
+          ]),
+      ...delays.map((entry) => [
+            'Compulsion delay',
+            entry.startedAt.toIso8601String(),
+            '',
+            '',
+            entry.initialUrge,
+            entry.result ?? 'In progress',
+            '${entry.durationMinutes} minutes',
           ]),
     ];
     return rows.map((row) => row.map(_escapeCsv).join(',')).join('\r\n');

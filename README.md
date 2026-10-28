@@ -44,7 +44,7 @@ test/
 
 ### Local database
 
-The version-one database creates indexed tables for daily check-ins, exposure hierarchy items, exposure sessions, exposure measurements, compulsion urges, and response delays. Foreign keys cascade session measurement deletion and preserve associated records safely when hierarchy items are removed. A session's start timestamp is persisted; elapsed time is derived from that timestamp, allowing an unfinished session to be resumed after the application restarts.
+The version-two database has an upgrade path from version one and creates indexed tables for daily check-ins, exposure hierarchy items, exposure sessions, exposure measurements, compulsion urges, and response delays. Foreign keys cascade session measurement deletion and preserve associated records safely when hierarchy items are removed. A session's start timestamp is persisted; elapsed time is derived from that timestamp, allowing an unfinished session to be resumed after the application restarts.
 
 ## Current functionality
 
