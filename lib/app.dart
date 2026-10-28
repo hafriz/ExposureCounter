@@ -65,7 +65,7 @@ class ExposureCompanionApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => MaterialApp.router(
-        title: 'Exposure Companion',
+        title: 'Exposure Counter',
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
@@ -89,7 +89,7 @@ class AppShell extends StatelessWidget {
     };
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Exposure Companion'),
+        title: const _BrandLockup(),
         actions: [
           IconButton(
             tooltip: 'Settings and privacy',
@@ -163,4 +163,25 @@ class AppShell extends StatelessWidget {
       ),
     );
   }
+}
+
+class _BrandLockup extends StatelessWidget {
+  const _BrandLockup();
+
+  @override
+  Widget build(BuildContext context) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.asset(
+              'assets/branding/exposure_counter_mark.png',
+              width: 32,
+              height: 32,
+            ),
+          ),
+          const SizedBox(width: 10),
+          const Text('Exposure Counter'),
+        ],
+      );
 }

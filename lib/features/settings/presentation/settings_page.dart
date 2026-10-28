@@ -72,6 +72,45 @@ class SettingsPage extends ConsumerWidget {
               isThreeLine: true,
             ),
             const Divider(),
+            Card(
+              margin: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.asset(
+                        'assets/branding/exposure_counter_mark.png',
+                        width: 72,
+                        height: 72,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Exposure Counter',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 4),
+                          Text('A calm companion for practicing courageous steps.'),
+                          SizedBox(height: 12),
+                          Text(
+                            'Developed by RareCreation',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const Divider(),
             ListTile(
               leading: const Icon(Icons.delete_forever_outlined),
               title: const Text('Delete all application data'),
