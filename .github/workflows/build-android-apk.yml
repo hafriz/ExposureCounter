@@ -48,7 +48,7 @@ jobs:
         run: |
           dart run flutter_launcher_icons
           find android/app/src/main -name MainActivity.kt -exec sed -i \
-            's/import io.flutter.embedding.android.FlutterActivity/import io.flutter.embedding.android.FlutterFragmentActivity/; s/extends FlutterActivity/extends FlutterFragmentActivity/' {} +
+            's/import io.flutter.embedding.android.FlutterActivity/import io.flutter.embedding.android.FlutterFragmentActivity/; s/: FlutterActivity/: FlutterFragmentActivity/' {} +
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.USE_BIOMETRIC" />' android/app/src/main/AndroidManifest.xml
 
       - name: Build release APK
