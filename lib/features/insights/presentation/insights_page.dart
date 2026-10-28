@@ -73,7 +73,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
   Widget build(BuildContext context) {
     final checkIns = ref.watch(checkInsProvider);
     final sessions = ref.watch(sessionsProvider);
-    final engine = const ExposureInsightEngine();
+    final engine = ExposureInsightEngine();
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
