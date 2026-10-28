@@ -91,10 +91,7 @@ The current version does not implement application-level biometric locking or se
 
 ## Future work
 
-<<<<<<< HEAD
 Priorities include Drift-backed migrations, biometric lock and secure settings, reminders, weekly reflection, record editing, expanded insights (including additional filterable metrics), and accessibility verification. Any future synchronization must be optional, encrypted, and initiated with explicit user consent. Clinical interpretation and automated reassurance are out of scope.
-=======
-Priorities include Drift-backed migrations, biometric lock and secure settings, reminders, weekly reflection, record editing, expanded insights, and accessibility verification. Any future synchronization must be optional, encrypted, and initiated with explicit user consent. Clinical interpretation and automated reassurance are out of scope.
 
 ## CI/CD: Automatic Android APK builds
 
@@ -127,4 +124,3 @@ This repository includes a GitHub Actions workflow at `.github/workflows/build-a
 - **Signing**: CI builds without custom signing credentials produce an APK signed with Flutter's default debug signing key in many setups or requires configuration; for distribution outside testing, configure proper release signing via secrets.
 - **Android host project**: If `android/` already exists in the repo, the workflow does **not** regenerate/overwrite it. If it's missing (as noted in "Known limitations"), it will be generated safely.
 - **Offline-first**: No backend/analytics/network features are added by this workflow.
->>>>>>> ao/flutter-apk-ci/root
