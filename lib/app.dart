@@ -7,6 +7,8 @@ import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/exposure/presentation/exposure_pages.dart';
 import 'features/history/presentation/history_page.dart';
 import 'features/insights/presentation/insights_page.dart';
+import 'features/settings/presentation/settings_page.dart';
+import 'features/urges/presentation/compulsion_urge_page.dart';
 
 final _router = GoRouter(
   routes: [
@@ -43,8 +45,17 @@ final _router = GoRouter(
           ExposureSessionPage(sessionId: state.pathParameters['id']!),
     ),
     GoRoute(
+      path: '/exposure/start/:id',
+      builder: (context, state) =>
+          ExposureStartPage(itemId: state.pathParameters['id']!),
+    ),
+    GoRoute(
       path: '/urge',
       builder: (context, state) => const CompulsionUrgePage(),
+    ),
+    GoRoute(
+      path: '/settings',
+      builder: (context, state) => const SettingsPage(),
     ),
   ],
 );
@@ -77,44 +88,56 @@ class AppShell extends StatelessWidget {
       _ => 0,
     };
     return Scaffold(
-      appBar: AppBar(title: const Text('Exposure Companion')),
+      appBar: AppBar(
+        title: const Text('Exposure Companion'),
+        actions: [
+          IconButton(
+            tooltip: 'Settings and privacy',
+            onPressed: () => context.push('/settings'),
+            icon: const Icon(Icons.settings_outlined),
+          ),
+        ],
+      ),
       body: child,
       floatingActionButton: FloatingActionButton(
         tooltip: 'Quick actions',
-        onPressed: () => showModalBottomSheet<void>(
-          context: context,
-          builder: (context) => SafeArea(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.favorite_outline),
-                  title: const Text('Quick check-in'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/check-in');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.touch_app_outlined),
-                  title: const Text('Record a compulsion urge'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/urge');
-                  },
-                ),
-                ListTile(
-                  leading: const Icon(Icons.add_circle_outline),
-                  title: const Text('Create an exposure'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    context.push('/exposure/new');
-                  },
-                ),
-              ],
+        onPressed: () {
+          final router = GoRouter.of(context);
+          showModalBottomSheet<void>(
+            context: context,
+            builder: (sheetContext) => SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.favorite_outline),
+                    title: const Text('Quick check-in'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      router.push('/check-in');
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.touch_app_outlined),
+                    title: const Text('Record a compulsion urge'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      router.push('/urge');
+                    },
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.add_circle_outline),
+                    title: const Text('Create an exposure'),
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      router.push('/exposure/new');
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-        ),
+          );
+        },
         child: const Icon(Icons.add),
       ),
       bottomNavigationBar: NavigationBar(

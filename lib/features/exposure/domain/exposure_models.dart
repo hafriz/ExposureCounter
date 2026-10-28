@@ -179,3 +179,48 @@ class CompulsionUrge {
         sessionId: map['session_id'] as String?,
       );
 }
+
+class CompulsionDelay {
+  const CompulsionDelay({
+    required this.id,
+    required this.startedAt,
+    required this.durationMinutes,
+    required this.initialUrge,
+    this.sessionId,
+    this.endedAt,
+    this.result,
+  });
+
+  final String id;
+  final DateTime startedAt;
+  final int durationMinutes;
+  final int initialUrge;
+  final String? sessionId;
+  final DateTime? endedAt;
+  final String? result;
+
+  DateTime get dueAt => startedAt.add(Duration(minutes: durationMinutes));
+  Duration get remaining => dueAt.difference(DateTime.now());
+
+  Map<String, Object?> toMap() => {
+        'id': id,
+        'started_at': startedAt.toIso8601String(),
+        'duration_minutes': durationMinutes,
+        'initial_urge': initialUrge,
+        'session_id': sessionId,
+        'ended_at': endedAt?.toIso8601String(),
+        'result': result,
+      };
+
+  factory CompulsionDelay.fromMap(Map<String, Object?> map) => CompulsionDelay(
+        id: map['id']! as String,
+        startedAt: DateTime.parse(map['started_at']! as String),
+        durationMinutes: map['duration_minutes']! as int,
+        initialUrge: map['initial_urge']! as int,
+        sessionId: map['session_id'] as String?,
+        endedAt: map['ended_at'] == null
+            ? null
+            : DateTime.parse(map['ended_at']! as String),
+        result: map['result'] as String?,
+      );
+}

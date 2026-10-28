@@ -23,3 +23,12 @@ final sessionsProvider = FutureProvider((ref) async {
 final urgesProvider = FutureProvider((ref) async {
   return ref.watch(repositoryProvider).getUrges();
 });
+
+final measurementsProvider =
+    FutureProvider.family((ref, String sessionId) async {
+  return ref.watch(repositoryProvider).getMeasurements(sessionId);
+});
+
+final activeDelayProvider = FutureProvider((ref) async {
+  return ref.watch(repositoryProvider).getActiveDelay();
+});

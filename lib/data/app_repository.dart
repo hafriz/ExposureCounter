@@ -102,6 +102,19 @@ class AppRepository {
         await database.execute(
           'CREATE INDEX urges_recorded_at ON compulsion_urges(recorded_at)',
         );
+        await database.execute('''
+          CREATE TABLE compulsion_delays (
+            id TEXT PRIMARY KEY,
+            started_at TEXT NOT NULL,
+            duration_minutes INTEGER NOT NULL,
+            initial_urge INTEGER NOT NULL CHECK(initial_urge BETWEEN 0 AND 10),
+            session_id TEXT,
+            ended_at TEXT,
+            result TEXT,
+            FOREIGN KEY(session_id) REFERENCES exposure_sessions(id)
+              ON DELETE SET NULL
+          )
+        ''');
       },
     );
   }
@@ -147,10 +160,26 @@ class AppRepository {
     );
   }
 
+  Future<void> deleteSession(String id) async {
+    await (await _db).delete(
+      'exposure_sessions',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deleteUrge(String id) async {
+    await (await _db).delete(
+      'compulsion_urges',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<List<ExposureHierarchyItem>> getExposureItems() async {
     final rows = await (await _db).query(
       'exposure_hierarchy_items',
-      orderBy: 'difficulty, sort_order',
+      orderBy: 'sort_order',
     );
     return rows.map(ExposureHierarchyItem.fromMap).toList();
   }
@@ -179,7 +208,7 @@ class AppRepository {
       expectedAnxiety: expectedAnxiety,
       difficulty: difficulty,
       status: 'Planned',
-      sortOrder: count,
+      sortOrder: difficulty * 10000 + count,
     );
     await database.insert('exposure_hierarchy_items', item.toMap());
   }
@@ -377,10 +406,63 @@ class AppRepository {
     );
   }
 
+  Future<CompulsionDelay?> getActiveDelay() async {
+    final rows = await (await _db).query(
+      'compulsion_delays',
+      where: 'ended_at IS NULL',
+      orderBy: 'started_at DESC',
+      limit: 1,
+    );
+    return rows.isEmpty ? null : CompulsionDelay.fromMap(rows.first);
+  }
+
+  Future<CompulsionDelay> startDelay({
+    required int minutes,
+    required int urge,
+  }) async {
+    final database = await _db;
+    final active = await getActiveDelay();
+    if (active != null) {
+      throw StateError('A response delay is already in progress.');
+    }
+    final session = await getActiveSession();
+    final delay = CompulsionDelay(
+      id: _uuid.v4(),
+      startedAt: DateTime.now(),
+      durationMinutes: minutes,
+      initialUrge: urge,
+      sessionId: session?.id,
+    );
+    await database.insert('compulsion_delays', delay.toMap());
+    return delay;
+  }
+
+  Future<void> extendDelay(String id, int additionalMinutes) async {
+    await (await _db).rawUpdate(
+      'UPDATE compulsion_delays SET duration_minutes = duration_minutes + ? '
+      'WHERE id = ? AND ended_at IS NULL',
+      [additionalMinutes, id],
+    );
+  }
+
+  Future<void> finishDelay(String id, String result) async {
+    final changed = await (await _db).update(
+      'compulsion_delays',
+      {
+        'ended_at': DateTime.now().toIso8601String(),
+        'result': result,
+      },
+      where: 'id = ? AND ended_at IS NULL',
+      whereArgs: [id],
+    );
+    if (changed == 0) throw StateError('This response delay has ended.');
+  }
+
   Future<void> deleteAllData() async {
     final database = await _db;
     await database.transaction((transaction) async {
       await transaction.delete('compulsion_urges');
+      await transaction.delete('compulsion_delays');
       await transaction.delete('exposure_measurements');
       await transaction.delete('exposure_sessions');
       await transaction.delete('exposure_hierarchy_items');
