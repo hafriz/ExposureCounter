@@ -52,7 +52,10 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
       return;
     }
     setState(() {
-      _selectedRange = insight_domain.DateTimeRange(start: picked.start, end: picked.end);
+      _selectedRange = insight_domain.DateTimeRange(
+        start: picked.start,
+        end: picked.end,
+      );
     });
   }
 
