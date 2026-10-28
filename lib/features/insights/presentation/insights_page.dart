@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/providers.dart';
 import '../../check_in/domain/daily_check_in.dart';
-import '../domain/exposure_insight_engine.dart';
+import '../domain/exposure_insight_engine.dart' as insight_domain;
 
 class InsightsPage extends ConsumerStatefulWidget {
   const InsightsPage({super.key});
@@ -15,7 +15,7 @@ class InsightsPage extends ConsumerStatefulWidget {
 }
 
 class _InsightsPageState extends ConsumerState<InsightsPage> {
-  DateTimeRange? _selectedRange;
+  insight_domain.DateTimeRange? _selectedRange;
   final _dateFormat = DateFormat.yMd();
 
   String _rangeLabel() {
@@ -35,7 +35,7 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
     final firstDate = DateTime(2000);
     final lastDate = DateTime(now.year, now.month, now.day);
     final initialRange = _selectedRange ??
-        DateTimeRange(
+        insight_domain.DateTimeRange(
           start: DateTime(now.year, now.month, now.day).subtract(const Duration(days: 30)),
           end: lastDate,
         );
@@ -52,11 +52,11 @@ class _InsightsPageState extends ConsumerState<InsightsPage> {
       return;
     }
     setState(() {
-      _selectedRange = DateTimeRange(start: picked.start, end: picked.end);
+      _selectedRange = insight_domain.DateTimeRange(start: picked.start, end: picked.end);
     });
   }
 
-  DateTimeRange pickedDateRange(DateTimeRange range) {
+  DateTimeRange pickedDateRange(insight_domain.DateTimeRange range) {
     return DateTimeRange(start: range.start, end: range.end);
   }
 

@@ -484,7 +484,7 @@ class _ExposureSessionPageState extends ConsumerState<ExposureSessionPage> {
             return const Center(child: Text('This exposure session is unavailable.'));
           }
           final session = matches.first;
-          final recordedMeasurements = measurements.valueOrNull;
+          final recordedMeasurements = measurements.asData?.value;
           final latestMeasurement =
               recordedMeasurements == null || recordedMeasurements.isEmpty
                   ? null
