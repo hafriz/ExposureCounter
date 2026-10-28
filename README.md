@@ -91,4 +91,40 @@ The current version does not implement application-level biometric locking or se
 
 ## Future work
 
+<<<<<<< HEAD
 Priorities include Drift-backed migrations, biometric lock and secure settings, reminders, weekly reflection, record editing, expanded insights (including additional filterable metrics), and accessibility verification. Any future synchronization must be optional, encrypted, and initiated with explicit user consent. Clinical interpretation and automated reassurance are out of scope.
+=======
+Priorities include Drift-backed migrations, biometric lock and secure settings, reminders, weekly reflection, record editing, expanded insights, and accessibility verification. Any future synchronization must be optional, encrypted, and initiated with explicit user consent. Clinical interpretation and automated reassurance are out of scope.
+
+## CI/CD: Automatic Android APK builds
+
+This repository includes a GitHub Actions workflow at `.github/workflows/build-android-apk.yml` to automatically build a release APK.
+
+### Triggers
+- **Manual dispatch** (`workflow_dispatch`): Run the workflow from GitHub Actions → "Build Android APK" → "Run workflow". 
+- **Version tags** (`push` tags matching `v*`): Pushing a tag like `v1.0.0` will build the APK and create a GitHub Release with the APK attached as a downloadable asset.
+
+### Flutter/SDK versions
+- Flutter: `3.35.7` (stable, pinned in CI)
+- Java: `17` (Temurin)
+- Android builds use the default Flutter release signing configuration in CI. **No secrets/keystores are committed or required** for an unsigned-debug-equivalent release APK built without a custom `key.properties`; if you want to publish a properly signed release, configure `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` as repository secrets and update the workflow/`android/app/build.gradle` accordingly.
+
+### Build behavior
+1. Checks out the repo
+2. Sets up Java 17 and Flutter 3.35.7 (cached)
+3. Runs `flutter pub get`
+4. If the `android/` directory is missing, runs `flutter create . --platforms android --project-name exposure_counter` **without overwriting existing app code** (it only generates when absent)
+5. Runs `flutter build apk --release`
+6. **Manual runs**: uploads `build/app/outputs/flutter-apk/app-release.apk` as a workflow artifact (downloadable from the workflow run page)
+7. **Tag runs**: creates a GitHub Release for the tag and attaches the APK as a release asset
+
+### Download / install instructions
+- **From a tag release**: Go to Releases → select the tag (e.g., `v1.0.0`) → download `app-release.apk` under "Assets". 
+- **From a manual workflow run**: Go to Actions → run → "Artifacts" section → download `exposure-counter-release-apk.zip` (contains `app-release.apk`).
+- **Install on Android**: Transfer the APK to your device and install it. You may need to allow installation from unknown sources for that app/file. This app stores data locally and has no network sync; see Privacy & Security above.
+
+### Limitations
+- **Signing**: CI builds without custom signing credentials produce an APK signed with Flutter's default debug signing key in many setups or requires configuration; for distribution outside testing, configure proper release signing via secrets.
+- **Android host project**: If `android/` already exists in the repo, the workflow does **not** regenerate/overwrite it. If it's missing (as noted in "Known limitations"), it will be generated safely.
+- **Offline-first**: No backend/analytics/network features are added by this workflow.
+>>>>>>> ao/flutter-apk-ci/root
