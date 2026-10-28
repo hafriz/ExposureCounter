@@ -484,6 +484,11 @@ class _ExposureSessionPageState extends ConsumerState<ExposureSessionPage> {
             return const Center(child: Text('This exposure session is unavailable.'));
           }
           final session = matches.first;
+          final recordedMeasurements = measurements.valueOrNull;
+          final latestMeasurement =
+              recordedMeasurements == null || recordedMeasurements.isEmpty
+                  ? null
+                  : recordedMeasurements.last;
           final elapsed = (session.endedAt ?? _now).difference(session.startedAt);
           return ListView(
             padding: const EdgeInsets.all(20),
@@ -506,13 +511,12 @@ class _ExposureSessionPageState extends ConsumerState<ExposureSessionPage> {
                         children: [
                           _SessionScore(
                             label: 'Anxiety',
-                            value: measurements.valueOrNull?.lastOrNull?.anxiety ??
+                            value: latestMeasurement?.anxiety ??
                                 session.startingAnxiety,
                           ),
                           _SessionScore(
                             label: 'Compulsion urge',
-                            value: measurements.valueOrNull?.lastOrNull
-                                    ?.compulsionUrge ??
+                            value: latestMeasurement?.compulsionUrge ??
                                 session.startingUrge,
                           ),
                         ],
