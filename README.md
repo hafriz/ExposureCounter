@@ -54,13 +54,13 @@ The version-two database has an upgrade path from version one and creates indexe
 - Exposure start ratings, optional in-session measurements, elapsed-time display, and neutral session completion
 - Compulsion-urge recording and 5-, 10-, or 20-minute response delays that recover from an application restart
 - History for check-ins, sessions, and urges, including individual record deletion
-- Deterministic averages, completed-session totals, prevented-response counts, and a check-in anxiety chart
+- Deterministic averages, completed-session totals, prevented-response counts, a check-in anxiety chart, and custom date-range filters on the Insights page
 - CSV export initiated by the user through the system share sheet
 - Settings and privacy screen with support and safety information and delete-all data
 
 ## Known limitations
 
-This is an initial functional foundation, not a complete production release. The current version does not yet include Drift, biometric application locking, configurable local reminders, weekly reflections, custom date-range filters, editing existing check-ins or hierarchy entries, response-delay outcome analytics, or a full settings interface. Android platform build files must be generated with Flutter before building this checkout.
+This is an initial functional foundation, not a complete production release. The current version does not yet include Drift, biometric application locking, configurable local reminders, weekly reflections, editing existing check-ins or hierarchy entries, response-delay outcome analytics, or a full settings interface. Android platform build files must be generated with Flutter before building this checkout.
 
 ## Development setup
 
@@ -91,4 +91,4 @@ The current version does not implement application-level biometric locking or se
 
 ## Future work
 
-Priorities include Drift-backed migrations, biometric lock and secure settings, reminders, weekly reflection, record editing, expanded insights, and accessibility verification. Any future synchronization must be optional, encrypted, and initiated with explicit user consent. Clinical interpretation and automated reassurance are out of scope.
+Priorities include Drift-backed migrations, biometric lock and secure settings, reminders, weekly reflection, record editing, expanded insights (including additional filterable metrics), and accessibility verification. Any future synchronization must be optional, encrypted, and initiated with explicit user consent. Clinical interpretation and automated reassurance are out of scope.
