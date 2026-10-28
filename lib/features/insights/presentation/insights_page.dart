@@ -7,13 +7,70 @@ import '../../../core/providers.dart';
 import '../../check_in/domain/daily_check_in.dart';
 import '../domain/exposure_insight_engine.dart';
 
-class InsightsPage extends ConsumerWidget {
+class InsightsPage extends ConsumerStatefulWidget {
   const InsightsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<InsightsPage> createState() => _InsightsPageState();
+}
+
+class _InsightsPageState extends ConsumerState<InsightsPage> {
+  DateTimeRange? _selectedRange;
+  final _dateFormat = DateFormat.yMd();
+
+  String _rangeLabel() {
+    if (_selectedRange == null) {
+      return 'All time';
+    }
+    final start = _dateFormat.format(_selectedRange!.start);
+    final end = _dateFormat.format(_selectedRange!.end);
+    if (start == end) {
+      return start;
+    }
+    return '$start – $end';
+  }
+
+  Future<void> _pickRange() async {
+    final now = DateTime.now();
+    final firstDate = DateTime(2000);
+    final lastDate = DateTime(now.year, now.month, now.day);
+    final initialRange = _selectedRange ??
+        DateTimeRange(
+          start: DateTime(now.year, now.month, now.day).subtract(const Duration(days: 30)),
+          end: lastDate,
+        );
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: lastDate,
+      initialDateRange: pickedDateRange(initialRange),
+      helpText: 'Select date range',
+      cancelText: 'Cancel',
+      confirmText: 'Apply',
+    );
+    if (picked == null) {
+      return;
+    }
+    setState(() {
+      _selectedRange = DateTimeRange(start: picked.start, end: picked.end);
+    });
+  }
+
+  DateTimeRange pickedDateRange(DateTimeRange range) {
+    return DateTimeRange(start: range.start, end: range.end);
+  }
+
+  void _clearRange() {
+    setState(() {
+      _selectedRange = null;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final checkIns = ref.watch(checkInsProvider);
     final sessions = ref.watch(sessionsProvider);
+    final engine = const ExposureInsightEngine();
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
@@ -23,13 +80,46 @@ class InsightsPage extends ConsumerWidget {
           'These summaries describe records on this device and are not clinical interpretations.',
         ),
         const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Date range',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(_rangeLabel()),
+                    ],
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: _pickRange,
+                  icon: const Icon(Icons.date_range_outlined),
+                  label: const Text('Filter'),
+                ),
+                if (_selectedRange != null)
+                  TextButton(
+                    onPressed: _clearRange,
+                    child: const Text('Clear'),
+                  ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         checkIns.when(
           loading: () => const LinearProgressIndicator(),
           error: (error, stack) => const Text('Check-in insights are unavailable.'),
           data: (items) {
-            final engine = const ExposureInsightEngine();
-            final anxiety = engine.averageAnxiety(items);
-            final urge = engine.averageCompulsionUrge(items);
+            final filtered = engine.filterCheckInsByDateRange(items, _selectedRange);
+            final anxiety = engine.averageAnxiety(filtered);
+            final urge = engine.averageCompulsionUrge(filtered);
             return Column(
               children: [
                 _MetricCard(
@@ -40,9 +130,12 @@ class InsightsPage extends ConsumerWidget {
                   title: 'Average recorded compulsion urge',
                   value: urge == null ? '—' : '${urge.toStringAsFixed(1)} / 10',
                 ),
-                if (items.isNotEmpty) ...[
+                if (filtered.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  _AnxietyChart(items: items.take(14).toList().reversed.toList()),
+                  _AnxietyChart(items: filtered.take(14).toList().reversed.toList()),
+                ] else if (_selectedRange != null) ...[
+                  const SizedBox(height: 8),
+                  const Text('No check-ins in the selected date range.'),
                 ],
               ],
             );
@@ -53,10 +146,10 @@ class InsightsPage extends ConsumerWidget {
           loading: () => const LinearProgressIndicator(),
           error: (error, stack) => const Text('Exposure insights are unavailable.'),
           data: (items) {
-            final engine = const ExposureInsightEngine();
-            final completed = items.where((entry) => entry.endedAt != null);
-            final prevented = engine.responsesPrevented(items);
-            final minutes = engine.totalPracticeTime(items).inMinutes;
+            final filtered = engine.filterSessionsByDateRange(items, _selectedRange);
+            final completed = filtered.where((entry) => entry.endedAt != null);
+            final prevented = engine.responsesPrevented(filtered);
+            final minutes = engine.totalPracticeTime(filtered).inMinutes;
             return Column(
               children: [
                 _MetricCard(
@@ -71,6 +164,10 @@ class InsightsPage extends ConsumerWidget {
                   title: 'Responses prevented',
                   value: '$prevented',
                 ),
+                if (filtered.isEmpty && _selectedRange != null) ...[
+                  const SizedBox(height: 8),
+                  const Text('No exposure sessions in the selected date range.'),
+                ],
               ],
             );
           },
