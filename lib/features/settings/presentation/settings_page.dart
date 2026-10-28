@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
+import '../../../core/app_lock.dart';
 
 class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
@@ -55,13 +56,38 @@ class SettingsPage extends ConsumerWidget {
               isThreeLine: true,
             ),
             const Divider(),
-            const ListTile(
-              leading: Icon(Icons.lock_outline),
-              title: Text('Application lock'),
-              subtitle: Text(
-                'Biometric locking is not available in this initial version. Use your device security to protect this information.',
-              ),
-              isThreeLine: true,
+            Builder(
+              builder: (context) {
+                final lock = AppLockScope.of(context);
+                return SwitchListTile(
+                  secondary: const Icon(Icons.fingerprint),
+                  title: const Text('Application lock'),
+                  subtitle: Text(
+                    lock.enabled
+                        ? 'Require biometrics or device authentication when opening the app.'
+                        : 'Protect this app with biometrics or your device passcode.',
+                  ),
+                  value: lock.enabled,
+                  onChanged: lock.busy
+                      ? null
+                      : (enabled) async {
+                          if (enabled) {
+                            final success = await lock.enable();
+                            if (!context.mounted || success) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  lock.error ??
+                                      'Could not enable application lock.',
+                                ),
+                              ),
+                            );
+                          } else {
+                            await lock.disable();
+                          }
+                        },
+                );
+              },
             ),
             const Divider(),
             const ListTile(

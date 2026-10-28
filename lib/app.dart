@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import 'core/theme/app_theme.dart';
+import 'core/app_lock.dart';
 import 'features/check_in/presentation/check_in_page.dart';
 import 'features/dashboard/presentation/dashboard_page.dart';
 import 'features/exposure/presentation/exposure_pages.dart';
@@ -60,8 +61,27 @@ final _router = GoRouter(
   ],
 );
 
-class ExposureCompanionApp extends StatelessWidget {
+class ExposureCompanionApp extends StatefulWidget {
   const ExposureCompanionApp({super.key});
+
+  @override
+  State<ExposureCompanionApp> createState() => _ExposureCompanionAppState();
+}
+
+class _ExposureCompanionAppState extends State<ExposureCompanionApp> {
+  late final AppLockController _appLock;
+
+  @override
+  void initState() {
+    super.initState();
+    _appLock = AppLockController()..initialize();
+  }
+
+  @override
+  void dispose() {
+    _appLock.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) => MaterialApp.router(
@@ -70,7 +90,74 @@ class ExposureCompanionApp extends StatelessWidget {
         darkTheme: AppTheme.dark,
         themeMode: ThemeMode.system,
         routerConfig: _router,
+        builder: (context, child) => AppLockScope(
+          controller: _appLock,
+          child: Stack(
+            children: [
+              child ?? const SizedBox.shrink(),
+              const _AppLockOverlay(),
+            ],
+          ),
+        ),
       );
+}
+
+class _AppLockOverlay extends StatelessWidget {
+  const _AppLockOverlay();
+
+  @override
+  Widget build(BuildContext context) {
+    final lock = AppLockScope.of(context);
+    if (!lock.locked) return const SizedBox.shrink();
+    return Material(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(28),
+                  child: Image.asset(
+                    'assets/branding/exposure_counter_mark.png',
+                    width: 112,
+                    height: 112,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Exposure Counter is locked',
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Authenticate to protect your private records.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton.icon(
+                  onPressed: lock.busy ? null : lock.unlock,
+                  icon: const Icon(Icons.fingerprint),
+                  label: Text(lock.busy ? 'Waiting…' : 'Unlock'),
+                ),
+                if (lock.error != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    lock.error!,
+                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class AppShell extends StatelessWidget {

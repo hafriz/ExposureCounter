@@ -44,6 +44,13 @@ jobs:
             echo "Android directory exists. Skipping flutter create to avoid overwriting existing app code."
           fi
 
+      - name: Configure Android authentication and launcher icon
+        run: |
+          dart run flutter_launcher_icons
+          find android/app/src/main -name MainActivity.kt -exec sed -i \
+            's/import io.flutter.embedding.android.FlutterActivity/import io.flutter.embedding.android.FlutterFragmentActivity/; s/extends FlutterActivity/extends FlutterFragmentActivity/' {} +
+          sed -i '/<manifest/a\    <uses-permission android:name="android.permission.USE_BIOMETRIC" />' android/app/src/main/AndroidManifest.xml
+
       - name: Build release APK
         run: flutter build apk --release
 
