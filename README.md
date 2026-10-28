@@ -102,13 +102,13 @@ This repository includes a GitHub Actions workflow at `.github/workflows/build-a
 - **Version tags** (`push` tags matching `v*`): Pushing a tag like `v1.0.0` will build the APK and create a GitHub Release with the APK attached as a downloadable asset.
 
 ### Flutter/SDK versions
-- Flutter: `3.47.8` (stable, pinned in CI; bundles Dart 3.13.7)
+- Flutter: `3.44.9` (stable, pinned in CI; bundles Dart 3.12.2)
 - Java: `17` (Temurin)
 - Android builds use the default Flutter release signing configuration in CI. **No secrets/keystores are committed or required** for an unsigned-debug-equivalent release APK built without a custom `key.properties`; if you want to publish a properly signed release, configure `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` as repository secrets and update the workflow/`android/app/build.gradle` accordingly.
 
 ### Build behavior
 1. Checks out the repo
-2. Sets up Java 17 and Flutter 3.47.8 (cached)
+2. Sets up Java 17 and Flutter 3.44.9 (cached)
 3. Runs `flutter pub get`
 4. If the `android/` directory is missing, runs `flutter create . --platforms android --project-name exposure_counter` **without overwriting existing app code** (it only generates when absent)
 5. Runs `flutter build apk --release`
