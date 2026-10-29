@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      HAS_PERSISTENT_SIGNING: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' && secrets.KEYSTORE_PASSWORD != '' && secrets.KEY_ALIAS != '' && secrets.KEY_PASSWORD != '' }}
 
     steps:
       - name: Checkout repository
@@ -50,6 +52,67 @@ jobs:
           find android/app/src/main -name MainActivity.kt -exec sed -i \
             's/import io.flutter.embedding.android.FlutterActivity/import io.flutter.embedding.android.FlutterFragmentActivity/; s/: FlutterActivity/: FlutterFragmentActivity/' {} +
           sed -i '/<manifest/a\    <uses-permission android:name="android.permission.USE_BIOMETRIC" />' android/app/src/main/AndroidManifest.xml
+          sed -i 's/android:label="exposure_counter"/android:label="Exposure Counter"/' android/app/src/main/AndroidManifest.xml
+
+      - name: Configure persistent Android release signing
+        if: ${{ env.HAS_PERSISTENT_SIGNING == 'true' }}
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/upload-keystore.jks
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEY_PASSWORD
+          keyAlias=$KEY_ALIAS
+          storeFile=../upload-keystore.jks
+          EOF
+          python3 - <<'PY'
+          from pathlib import Path
+
+          gradle_file = Path('android/app/build.gradle.kts')
+          contents = gradle_file.read_text()
+          contents = contents.replace(
+              'plugins {',
+              '''import java.io.FileInputStream
+          import java.util.Properties
+
+          val keystoreProperties = Properties()
+          val keystorePropertiesFile = rootProject.file("key.properties")
+          if (keystorePropertiesFile.exists()) {
+              keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+          }
+
+          plugins {''',
+              1,
+          )
+          contents = contents.replace(
+              '    buildTypes {',
+              '''    signingConfigs {
+                  create("release") {
+                      keyAlias = keystoreProperties["keyAlias"] as String?
+                      keyPassword = keystoreProperties["keyPassword"] as String?
+                      storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+                      storePassword = keystoreProperties["storePassword"] as String?
+                  }
+              }
+
+              buildTypes {''',
+              1,
+          )
+          contents = contents.replace(
+              'signingConfig = signingConfigs.getByName("debug")',
+              'signingConfig = signingConfigs.getByName("release")',
+              1,
+          )
+          gradle_file.write_text(contents)
+          PY
+
+      - name: Warn when using ephemeral Android signing
+        if: ${{ env.HAS_PERSISTENT_SIGNING != 'true' }}
+        run: echo '::warning::Persistent Android signing secrets are not configured; this APK cannot be installed as an update over a build signed with another key.'
 
       - name: Build release APK
         run: flutter build apk --release

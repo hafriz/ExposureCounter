@@ -104,7 +104,7 @@ This repository includes a GitHub Actions workflow at `.github/workflows/build-a
 ### Flutter/SDK versions
 - Flutter: `3.44.9` (stable, pinned in CI; bundles Dart 3.12.2)
 - Java: `17` (Temurin)
-- Android builds use the default Flutter release signing configuration in CI. **No secrets/keystores are committed or required** for an unsigned-debug-equivalent release APK built without a custom `key.properties`; if you want to publish a properly signed release, configure `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` as repository secrets and update the workflow/`android/app/build.gradle` accordingly.
+- Android builds use persistent release signing when the `ANDROID_KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, and `KEY_PASSWORD` repository secrets are configured. This keeps the signing key stable so users can install updates without uninstalling and losing local data. If those secrets are absent, CI warns that the APK uses an ephemeral signing key and should be treated as a fresh install.
 
 ### Build behavior
 1. Checks out the repo
@@ -121,6 +121,6 @@ This repository includes a GitHub Actions workflow at `.github/workflows/build-a
 - **Install on Android**: Transfer the APK to your device and install it. You may need to allow installation from unknown sources for that app/file. This app stores data locally and has no network sync; see Privacy & Security above.
 
 ### Limitations
-- **Signing**: CI builds without custom signing credentials produce an APK signed with Flutter's default debug signing key in many setups or requires configuration; for distribution outside testing, configure proper release signing via secrets.
+- **Signing**: Configure the four signing secrets before distributing updates. Android preserves the app's local SQLite and preferences during an in-place update with the same package ID and signing key; uninstalling the app deletes that local data.
 - **Android host project**: If `android/` already exists in the repo, the workflow does **not** regenerate/overwrite it. If it's missing (as noted in "Known limitations"), it will be generated safely.
 - **Offline-first**: No backend/analytics/network features are added by this workflow.
